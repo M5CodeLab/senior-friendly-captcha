@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wheel Verification</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --sky-top:#eaf3fb;
+    --sky-bottom:#d8ebf9;
+    --card:#ffffff;
+    --ring:#bcdcf2;
+    --ring-dark:#8ec3e6;
+    --accent:#2f80b8;
+    --accent-dark:#1f5f8b;
+    --success:#2fa864;
+    --success-bg:#e6f7ec;
+    --arrow-green:#3fae5c;
+    --text-main:#1c3a4a;
+    --text-sub:#5a7a8a;
+    --night:#2c3e6b;
+    --night-2:#4a5f9a;
+  }
+
+  *{box-sizing:border-box;}
+
+  body{
+    margin:0;
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-family:"Inter","Segoe UI",sans-serif;
+    -webkit-font-smoothing:antialiased;
+    background:radial-gradient(circle at 50% 0%, var(--sky-top), var(--sky-bottom) 70%);
+    padding:24px;
+  }
+
+  .card{
+    background:var(--card);
+    border-radius:28px;
+    box-shadow:0 20px 50px rgba(31,95,139,0.15);
+    padding:36px 32px 32px;
+    width:100%;
+    max-width:460px;
+    text-align:center;
+  }
+
+  .step-badge{
+    display:inline-block;
+    background:var(--accent);
+    color:#fff;
+    font-size:13.5px;
+    font-weight:600;
+    letter-spacing:0.3px;
+    padding:6px 18px;
+    border-radius:999px;
+    margin-bottom:14px;
+  }
+
+  h1{
+    font-size:21px;
+    line-height:1.6;
+    color:var(--text-main);
+    margin:0 0 8px;
+    font-weight:700;
+    letter-spacing:0.1px;
+  }
+
+  .sub{
+    font-size:15px;
+    color:var(--text-sub);
+    margin:0 0 26px;
+    font-weight:500;
+  }
+
+  .wheel-zone{
+    position:relative;
+    width:280px;
+    height:280px;
+    margin:0 auto 26px;
+  }
+
+  .target-arrow{
+    position:absolute;
+    top:50%;
+    right:-14px;
+    transform:translateY(-50%);
+    width:0;
+    height:0;
+    border-top:16px solid transparent;
+    border-bottom:16px solid transparent;
+    border-right:24px solid var(--arrow-green);
+    filter:drop-shadow(0 2px 3px rgba(0,0,0,0.15));
+    z-index:5;
+    transition:filter .2s ease;
+  }
+  .target-arrow.hit{
+    filter:drop-shadow(0 0 8px rgba(63,174,92,0.8));
+  }
+
+  .ring-outer{
+    position:absolute;
+    inset:0;
+    border-radius:50%;
+    background:var(--card);
+    box-shadow:0 0 0 8px var(--card), 0 0 0 9px var(--ring-dark), inset 0 2px 6px rgba(0,0,0,0.05);
+  }
+
+  .wheel{
+    position:absolute;
+    inset:10px;
+    border-radius:50%;
+    overflow:hidden;
+    box-shadow:inset 0 0 0 2px rgba(255,255,255,0.6);
+    transition:transform .5s cubic-bezier(.34,1.56,.64,1);
+  }
+
+  .quad{
+    position:absolute;
+    width:50%;
+    height:50%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:52px;
+  }
+  .q-night{ top:0; left:0; background:var(--night); border-top-left-radius:140px; }
+  .q-sun{ top:0; right:0; background:linear-gradient(135deg,#fdf3c9,#fbe58f); border-top-right-radius:140px; }
+  .q-cloud{ bottom:0; left:0; background:linear-gradient(135deg,#dcecf7,#c3ddef); border-bottom-left-radius:140px; }
+  .q-sun-cloud{ bottom:0; right:0; background:linear-gradient(135deg,#eaf5fc,#d3e9f7); border-bottom-right-radius:140px; }
+
+  .quad svg{ width:48px; height:48px; }
+
+  .hub{
+    position:absolute;
+    top:50%; left:50%;
+    width:34px; height:34px;
+    background:var(--card);
+    border:4px solid var(--ring-dark);
+    border-radius:50%;
+    transform:translate(-50%,-50%);
+    z-index:4;
+    box-shadow:0 2px 6px rgba(0,0,0,0.12);
+  }
+
+  .controls{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:28px;
+    margin-top:4px;
+  }
+
+  .ctrl-btn{
+    width:58px;
+    height:58px;
+    border-radius:50%;
+    border:none;
+    background:var(--accent);
+    color:#fff;
+    font-size:26px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    cursor:pointer;
+    box-shadow:0 6px 14px rgba(47,128,184,0.35);
+    transition:transform .15s ease, background .15s ease;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .ctrl-btn:hover{ background:var(--accent-dark); }
+  .ctrl-btn:active{ transform:scale(0.9); }
+  .ctrl-btn:disabled{ opacity:.5; cursor:not-allowed; transform:none; }
+
+  .status{
+    margin-top:22px;
+    min-height:52px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:10px;
+    font-size:16.5px;
+    font-weight:700;
+    letter-spacing:0.1px;
+    border-radius:14px;
+    padding:12px 14px;
+    transition:all .25s ease;
+  }
+  .status.idle{ color:var(--text-sub); font-weight:500; font-size:15px; background:transparent; }
+  .status.success{ color:var(--success); background:var(--success-bg); font-weight:700; }
+
+  .status svg{ width:22px; height:22px; flex-shrink:0; }
+
+  .reset-link{
+    margin-top:14px;
+    display:none;
+    background:none;
+    border:none;
+    color:var(--accent);
+    font-size:14px;
+    font-weight:600;
+    font-family:inherit;
+    text-decoration:underline;
+    text-underline-offset:3px;
+    cursor:pointer;
+  }
+  .reset-link.show{ display:inline-block; }
+
+  @media (prefers-reduced-motion: reduce){
+    .wheel{ transition:none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="card">
+  <span class="step-badge">STEP 1</span>
+  <h1>Rotate the wheel until the sun<br>aligns with the green arrow</h1>
+  <p class="sub">Use the left and right buttons to spin the wheel</p>
+
+  <div class="wheel-zone">
+    <div class="ring-outer"></div>
+    <div class="target-arrow" id="targetArrow"></div>
+
+    <div class="wheel" id="wheel">
+      <div class="quad q-night">
+        <svg viewBox="0 0 24 24" fill="none">
+          <path d="M20 14.5A8.5 8.5 0 0 1 9.5 4 8.5 8.5 0 1 0 20 14.5Z" fill="#f4ecd8"/>
+        </svg>
+      </div>
+      <div class="quad q-sun">
+        <svg viewBox="0 0 24 24" fill="none">
+          <circle cx="12" cy="12" r="5" fill="#f5a623"/>
+          <g stroke="#f5a623" stroke-width="2" stroke-linecap="round">
+            <line x1="12" y1="1.5" x2="12" y2="4.5"/>
+            <line x1="12" y1="19.5" x2="12" y2="22.5"/>
+            <line x1="1.5" y1="12" x2="4.5" y2="12"/>
+            <line x1="19.5" y1="12" x2="22.5" y2="12"/>
+            <line x1="4.6" y1="4.6" x2="6.7" y2="6.7"/>
+            <line x1="17.3" y1="17.3" x2="19.4" y2="19.4"/>
+            <line x1="4.6" y1="19.4" x2="6.7" y2="17.3"/>
+            <line x1="17.3" y1="6.7" x2="19.4" y2="4.6"/>
+          </g>
+        </svg>
+      </div>
+      <div class="quad q-cloud">
+        <svg viewBox="0 0 24 24" fill="none">
+          <path d="M6.5 18h11a4 4 0 0 0 .4-7.98A6 6 0 0 0 6.2 12.1 3.8 3.8 0 0 0 6.5 18Z" fill="#ffffff" stroke="#bcdcee" stroke-width="0.5"/>
+        </svg>
+      </div>
+      <div class="quad q-sun-cloud">
+        <svg viewBox="0 0 24 24" fill="none">
+          <circle cx="15" cy="8" r="4" fill="#f5a623"/>
+          <path d="M5 18h10.5a3.5 3.5 0 0 0 .3-6.98A5.2 5.2 0 0 0 4.9 12.4 3.3 3.3 0 0 0 5 18Z" fill="#ffffff" stroke="#bcdcee" stroke-width="0.5"/>
+        </svg>
+      </div>
+    </div>
+
+    <div class="hub"></div>
+  </div>
+
+  <div class="controls">
+    <button class="ctrl-btn" id="btnLeft" aria-label="Rotate left">←</button>
+    <button class="ctrl-btn" id="btnRight" aria-label="Rotate right">→</button>
+  </div>
+
+  <div class="status idle" id="status">Sun is not yet on the arrow</div>
+  <button class="reset-link" id="resetBtn">Start over</button>
+</div>
+
+<script>
+(function(){
+  const wheel = document.getElementById('wheel');
+  const btnLeft = document.getElementById('btnLeft');
+  const btnRight = document.getElementById('btnRight');
+  const statusEl = document.getElementById('status');
+  const targetArrow = document.getElementById('targetArrow');
+  const resetBtn = document.getElementById('resetBtn');
+
+  let rotation = 0;
+  let solved = false;
+  const STEP = 45;
+
+  function normalize(deg){
+    return ((deg % 360) + 360) % 360;
+  }
+
+  function checkAlignment(){
+    const sunCenter = normalize(45 + rotation);
+    return Math.abs(sunCenter - 90) < 1;
+  }
+
+  function updateWheel(){
+    wheel.style.transform = `rotate(${rotation}deg)`;
+    const aligned = checkAlignment();
+
+    if(aligned && !solved){
+      solved = true;
+      onSuccess();
+    } else if(!aligned){
+      statusEl.className = 'status idle';
+      statusEl.textContent = 'Sun is not yet on the arrow';
+      targetArrow.classList.remove('hit');
+    }
+  }
+
+  function onSuccess(){
+    targetArrow.classList.add('hit');
+    statusEl.className = 'status success';
+    statusEl.innerHTML = `
+      <svg viewBox="0 0 24 24" fill="none">
+        <circle cx="12" cy="12" r="11" fill="#2fa864"/>
+        <path d="M7 12.5l3 3 7-7" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <span>Verified!</span>
+    `;
+    btnLeft.disabled = true;
+    btnRight.disabled = true;
+    resetBtn.classList.add('show');
+  }
+
+  function onReset(){
+    solved = false;
+    rotation = 0;
+    wheel.style.transform = 'rotate(0deg)';
+    statusEl.className = 'status idle';
+    statusEl.textContent = 'Sun is not yet on the arrow';
+    targetArrow.classList.remove('hit');
+    btnLeft.disabled = false;
+    btnRight.disabled = false;
+    resetBtn.classList.remove('show');
+  }
+
+  btnRight.addEventListener('click', function(){
+    if(solved) return;
+    rotation += STEP;
+    updateWheel();
+  });
+
+  btnLeft.addEventListener('click', function(){
+    if(solved) return;
+    rotation -= STEP;
+    updateWheel();
+  });
+
+  resetBtn.addEventListener('click', onReset);
+
+  document.addEventListener('keydown', function(e){
+    if(e.key === 'ArrowRight'){ btnRight.click(); }
+    if(e.key === 'ArrowLeft'){ btnLeft.click(); }
+  });
+})();
+</script>
+
+</body>
+</html>
